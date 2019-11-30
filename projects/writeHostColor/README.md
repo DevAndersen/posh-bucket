@@ -6,5 +6,5 @@ Per default, "@X" is used to indicate a color change, where X is a hexadecimal d
 
 Example:
 
-- Input: "This is a @0test"
+- Input: "This is a @btest"
 - Result: "This is a" in the default color, and "test" in teal.
