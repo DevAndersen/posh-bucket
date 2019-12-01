@@ -29,3 +29,4 @@ $colorIndex = $null
 		$colorIndex = [int]("0x$colorChar")
 	}
 }
+Write-Host
