@@ -1,5 +1,7 @@
 # consoleImageRenderer
 
+![Bliss, now in the console!](./githubAssets/example.png)
+
 ## Description
 
 Renders the specified image file to the console as a 24-bit RGB image, utilizing ANSI escape sequences for coloring, and the upper half block character for pixels.
