@@ -24,8 +24,6 @@ param(
 
 function RenderImage([System.Drawing.Image]$Image)
 {
-	$escape = [Char]0x1B
-	$halfCharString = ([Char]0x2580).ToString()
 
 	[Console]::CursorVisible = $false
 	for ($y = 0; $y -lt $Image.Height; $y += 2)
@@ -60,6 +58,8 @@ function ResizeImage([System.Drawing.Image]$Image, $NewWidth, $NewHeight)
 
 [System.Reflection.Assembly]::LoadWithPartialName("System.Drawing") | Out-Null
 
+$escape = [Char]0x1B
+$halfCharString = ([Char]0x2580).ToString()
 $absolutePath = Resolve-Path $Path
 $imageFileStream = [System.IO.File]::OpenRead($absolutePath)
 $img = [System.Drawing.Image]::FromStream($imageFileStream, $false, $false)
