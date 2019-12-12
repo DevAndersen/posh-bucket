@@ -24,25 +24,23 @@ param(
 
 function RenderImage([System.Drawing.Image]$Image)
 {
-
 	[Console]::CursorVisible = $false
 	for ($y = 0; $y -lt $Image.Height; $y += 2)
 	{
-		$pixelString = ""
-		for ($x = 0; $x -lt $Image.Width; $x++)
+		$pixelStrings = for ($x = 0; $x -lt $Image.Width; $x++)
 		{
 			$f = $Image.GetPixel($x, $y)
-			$pixelString += "$escape[38;2;$($f.R);$($f.G);$($f.b)m"
+			"$escape[38;2;$($f.R);$($f.G);$($f.b)m"
 			
 			if ($y -lt $Image.Height - 1)
 			{
 				$b = $Image.GetPixel($x, $y + 1)
-				$pixelString += "$escape[48;2;$($b.R);$($b.G);$($b.B)m"
+				"$escape[48;2;$($b.R);$($b.G);$($b.B)m"
 			}
 			
-			$pixelString += $halfCharString
+			$halfCharString
 		}
-		Write-Host $pixelString
+		Write-Host ([String]::Join('', $pixelStrings))
 	}
 	[Console]::CursorVisible = $true
 }
@@ -59,7 +57,7 @@ function ResizeImage([System.Drawing.Image]$Image, $NewWidth, $NewHeight)
 [System.Reflection.Assembly]::LoadWithPartialName("System.Drawing") | Out-Null
 
 $escape = [Char]0x1B
-$halfCharString = ([Char]0x2580).ToString()
+$halfCharString = [Char]0x2580
 $absolutePath = Resolve-Path $Path
 $imageFileStream = [System.IO.File]::OpenRead($absolutePath)
 $img = [System.Drawing.Image]::FromStream($imageFileStream, $false, $false)
