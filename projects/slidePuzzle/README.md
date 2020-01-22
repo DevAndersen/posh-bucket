@@ -1,3 +1,3 @@
-#slidePuzzle
+# slidePuzzle
 
 A simple slide puzzle.
