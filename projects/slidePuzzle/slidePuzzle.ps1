@@ -1,27 +1,53 @@
-$lineOpen = (0..4 | % { "     " }) -join "."
-$lineClosed = (0..28 | % { "." }) -join ""
+[CmdletBinding()]
+param(
+   [int]$Width = 5,
+   [int]$Height = 5,
+   [int]$ShuffleCount = 1000,
+   [bool]$UseColors = $true
+)
 
-$dimX = 5
-$dimY = 5
+$charLineH = [char]0x2500
+$charLineV = [char]0x2502
+$charLineX = [char]0x253C
 
-$currentX = 4
-$currentY = 4
+$charTTop = [char]0x252C
+$charTBottom = [char]0x2534
+$charTLeft = [char]0x251C
+$charTRight = [char]0x2524
 
-$validX = 0..($dimX - 1)
-$validY = 0..($dimY - 1)
+$charCTL = [char]0x250C
+$charCTR = [char]0x2510
+$charCBL = [char]0x2514
+$charCBR = [char]0x2518
 
-[int[,]]$grid = [int[,]]::new($dimX, $dimY)
-[int[,]]$solvedGrid = [int[,]]::new($dimX, $dimY)
+$lineClosedPart = (0..4 | % { $charLineH }) -join ""
+
+$lineOpen = (0..($Width - 1) | % { "     " }) -join $charLineV
+$lineClosed = (0..($Width - 1) | % { $lineClosedPart }) -join $charLineX
+$lineTop = (0..($Width - 1) | % { (0..4 | % { $charLineH }) -join "" }) -join $charTTop
+$lineBottom = (0..($Width - 1) | % { (0..4 | % { $charLineH }) -join "" }) -join $charTBottom
+
+$currentX = $Width - 1
+$currentY = $Height - 1
+
+$validX = 0..($Width - 1)
+$validY = 0..($Height - 1)
+
+[int[,]]$grid = [int[,]]::new($Width, $Height)
+[int[,]]$solvedGrid = [int[,]]::new($Width, $Height)
+
+$cursorStartX = [console]::CursorLeft
+$cursorStartY = [console]::CursorTop
 
 function FillGrid($InputGrid)
 {
-	for ($y = 0; $y -lt $dimY; $y++)
+	for ($y = 0; $y -lt $Height; $y++)
 	{	
-		for ($x = 0; $x -lt $dimX; $x++)
+		for ($x = 0; $x -lt $Width; $x++)
 		{
-			if (($x -ne $dimX - 1) -or ($y -ne $dimY - 1))
+			if (($x -ne $Width - 1) -or ($y -ne $Height - 1))
 			{
-				$InputGrid[$x, $y] = ($y * 5) + $x + 1
+				$InputGrid[$x, $y] = ($y * $Width) + $x + 1
 			}
 		}
 	}
@@ -29,33 +55,50 @@ function FillGrid($InputGrid)
 
 function PrintLines()
 {
-	[console]::SetCursorPosition(0, 0)
-	for ($i = 0; $i -lt (3 * 5) + 4; $i++)
+	[console]::SetCursorPosition($cursorStartX, $cursorStartY)
+	Write-Host $charCTL$lineTop$charCTR -ForegroundColor DarkGray
+	for ($i = 0; $i -lt (3 * $Height) + ($Height - 1); $i++)
 	{
 		if ($i % 4 -eq 3)
 		{
-			Write-Host $lineClosed
+			Write-Host $charTLeft$lineClosed$charTRight -ForegroundColor DarkGray
 		}
 		else
 		{
-			Write-Host $lineOpen
+			Write-Host $charLineV$lineOpen$charLineV -ForegroundColor DarkGray
 		}
 	}
+	Write-Host $charCBL$lineBottom$charCBR -ForegroundColor DarkGray
 }
 
 function PrintGrid()
 {
-	[console]::SetCursorPosition(0, 0)
-	for ($y = 0; $y -lt $dimY; $y++)
+	[console]::SetCursorPosition($cursorStartX, $cursorStartY)
+	for ($y = 0; $y -lt $Height; $y++)
 	{	
-		for ($x = 0; $x -lt $dimX; $x++)
+		for ($x = 0; $x -lt $Width; $x++)
 		{
 			$number = $grid[$x, $y]
 			
-			[console]::SetCursorPosition($x * 6 + 2, $y * 4 + 1)
+			[console]::SetCursorPosition($cursorStartX + $x * 6 + 3, $cursorStartY + $y * 4 + 2)
 			if ($grid[$x, $y] -ne 0)
 			{
-				Write-Host $number.ToString().PadRight(2, " ")
+				if ($UseColors)
+				{
+					if ($grid[$x, $y] -eq ($y * $Width) + $x + 1)
+					{
+						$foreground = "Green"
+					}
+					else
+					{
+						$foreground = "Red"
+					}
+				}
+				else
+				{
+					$foreground = "Gray"
+				}
+				Write-Host $number.ToString().PadRight(2, " ") -ForegroundColor $foreground
 			}
 			else
 			{
@@ -67,7 +110,7 @@ function PrintGrid()
 
 function GetInput()
 {
-	$input = [console]::ReadKey().Key
+	$input = [console]::ReadKey($true).Key
 	
 	if ($input -eq [consolekey]::UpArrow)
 	{
@@ -103,6 +146,8 @@ function MoveTile($MoveX, $MoveY)
 	
 	if ($isMoveValid)
 	{
+		$script:moves++
+		
 		$tmp = $grid[$currentX, $currentY]
 		$grid[$currentX, $currentY] = $grid[$newX, $newY]
 		$grid[$newX, $newY] = $tmp
@@ -114,9 +159,9 @@ function MoveTile($MoveX, $MoveY)
 
 function IsGridSolved()
 {
-	for ($y = 0; $y -lt $dimY; $y++)
+	for ($y = 0; $y -lt $Height; $y++)
 	{	
-		for ($x = 0; $x -lt $dimX; $x++)
+		for ($x = 0; $x -lt $Width; $x++)
 		{
 			if ($grid[$x, $y] -ne $solvedGrid[$x, $y])
 			{
@@ -131,11 +176,13 @@ function ShuffleGrid()
 {
 	$validMoves = ((0,1),(0,-1),(1,0),(-1,0))
 	
-	0..400 | % {
+	0..$ShuffleCount | % {
 		$move = Get-Random $validMoves
 		MoveTile -MoveX $move[0] -MoveY $move[1]
 	}
 }
+
+[console]::CursorVisible = $false
 
 FillGrid -InputGrid $grid
 FillGrid -InputGrid $solvedGrid
@@ -145,6 +192,7 @@ ShuffleGrid
 PrintLines
 PrintGrid
 
+$moves = 0
 $timer = [System.Diagnostics.Stopwatch]::new()
 $timer.Start()
 
@@ -157,6 +205,9 @@ while (!(IsGridSolved))
 
 $timer.Stop()
 
+Write-Host "`r`n`r`n`r`n"
+Write-Host "Congratulations, puzzle solved!" -ForegroundColor Green
+Write-Host "Time:  $($timer.Elapsed.ToString("hh\:mm\:ss\:fff"))"
+Write-Host "Moves: $moves"
 
-Write-Host "Congratulations, puzzle solved!"
-Write-Host "Your time: $($timer.Elapsed.ToString("hh\:mm\:ss\.fff"))"
+[console]::CursorVisible = $true
