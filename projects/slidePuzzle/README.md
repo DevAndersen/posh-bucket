@@ -4,7 +4,7 @@
 
 A simple console-based slide puzzle game.
 
-The goal is to put all pieces into the correct places, and end with the empty tile in the bottom-left corner.
+The goal is to slide all pieces into their correct places, and end with the empty tile in the bottom-right corner.
 
 Use the arrow keys to move the puzzle pieces around.
 
