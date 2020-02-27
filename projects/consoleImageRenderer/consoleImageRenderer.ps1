@@ -40,7 +40,7 @@ function RenderImage([System.Drawing.Image]$Image)
 			
 			$halfCharString
 		}
-		Write-Host ([String]::Join('', $pixelStrings))
+		[String]::Join('', $pixelStrings + "$escape[0m")
 	}
 	[Console]::CursorVisible = $true
 }
