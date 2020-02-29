@@ -2,7 +2,13 @@
 
 Encode ANSI escape codes into a string, to add text decorations.
 
-![Simplified ANSI encoding.](./githubAssets/example.png)
+![Simplified ANSI encoding.](./githubAssets/example1.png)
+
+*Decorate entire strings.*
+
+![Simplified ANSI encoding.](./githubAssets/example2.png)
+
+*Decorate parts of strings.*
 
 ## Patterns
 
