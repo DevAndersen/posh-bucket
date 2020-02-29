@@ -12,6 +12,8 @@ Encode ANSI escape codes into a string, to add text decorations.
 
 ## Patterns
 
+Use in-string patterns to add decoration to parts of strings (see image example 2).
+
 ### Reset
 
 Reset all text decorations.
