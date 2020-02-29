@@ -50,6 +50,25 @@ function ResizeImage([System.Drawing.Image]$Image, $NewWidth, $NewHeight)
 	return $img.GetThumbnailImage($NewWidth, $NewHeight, $null, [IntPtr]::Zero)
 }
 
+function LoadImage()
+{
+	$urlRegex = "^http[s]?://"
+	if ($Path -match $urlRegex)
+	{
+		$webClient = [System.Net.WebClient]::new()
+		$imageStream = [System.IO.MemoryStream]::new($webClient.DownloadData($Path))
+		$webClient.Dispose()
+	}
+	else
+	{
+		$absolutePath = Resolve-Path $Path
+		$imageStream = [System.IO.File]::OpenRead($absolutePath)
+	}
+	$img = [System.Drawing.Image]::FromStream($imageStream, $false, $false)
+	$imageStream.Dispose()
+	return $img
+}
+
 #endregion
 
 #region Main flow
@@ -58,9 +77,8 @@ function ResizeImage([System.Drawing.Image]$Image, $NewWidth, $NewHeight)
 
 $escape = [Char]0x1B
 $halfCharString = [Char]0x2580
-$absolutePath = Resolve-Path $Path
-$imageFileStream = [System.IO.File]::OpenRead($absolutePath)
-$img = [System.Drawing.Image]::FromStream($imageFileStream, $false, $false)
+
+$img = LoadImage
 
 switch ($PSCmdlet.ParameterSetName)
 {
@@ -96,6 +114,5 @@ switch ($PSCmdlet.ParameterSetName)
 RenderImage -Image $img 
 
 $img.Dispose()
-$imageFileStream.Dispose()
 
 #endregion
