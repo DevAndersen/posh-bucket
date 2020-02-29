@@ -6,6 +6,8 @@
 
 Renders the specified image file to the console as a 24-bit RGB image, utilizing ANSI escape sequences for coloring, and the upper half block character for pixels.
 
+The image path can be local ("C:\...") or a URL (the URL must start with "HTTP(S)://").
+
 By default (parameterless), the image will be rendered at a 1:1 scale of the actual image size. If the image is larger than the console buffer, the rendering will look "torn".
 
 Alternatively, the script can be called with a specified height and width, or set to a fill mode which will try to make the image fill the console buffer.
