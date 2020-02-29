@@ -1,5 +1,11 @@
 param(
+
+	[Parameter(Mandatory)]
 	[String]$Text,
+	[Int]$ForegroundColor,
+	[Int]$BackgroundColor,
+	[Switch]$Underline,
+	[Switch]$Invert,
 	[Switch]$WithoutResetAtEnd
 )
 
@@ -8,6 +14,7 @@ param(
 $result = $Text
 $escape = [Char]0x1B
 
+$colorPattern = "\@\[([B,F])#([0-9,A-f]{3,6})\]"
 $htPatterns = @{
 	"\@\[R\]"	= "$escape[0m"	# Reset
 	"\@\[U\]"	= "$escape[4m"	# Underline
@@ -16,7 +23,37 @@ $htPatterns = @{
 	"\@\[-I\]"	= "$escape[27m"	# Inverse off
 }
 
-$colorPattern = "\@\[([B,F])#([0-9,A-f]{3,6})\]"
+#region Parameter modifiers
+
+if ($ForegroundColor)
+{
+	$fgColor = [System.Drawing.Color]::FromArgb($ForegroundColor)
+	$fr = $fgColor.R
+	$fg = $fgColor.G
+	$fb = $fgColor.B
+	$result = "$escape[38;2;$fr;$fg;$($fb)m$result"
+}
+
+if ($BackgroundColor)
+{
+	$bgColor = [System.Drawing.Color]::FromArgb($BackgroundColor)
+	$br = $bgColor.R
+	$bg = $bgColor.G
+	$bb = $bgColor.B
+	$result = "$escape[48;2;$br;$bg;$($bb)m$result"
+}
+
+if ($Underline)
+{
+	$result = "$escape[4m$result"
+}
+
+if ($Invert)
+{
+	$result = "$escape[7m$result"
+}
+
+#endregion
 
 #region functions
 
@@ -36,10 +73,10 @@ function EmbedColor()
 			"B" {"48"}
 		}
 		
-		$color = [System.Drawing.Color]::FromArgb("0x" + $matches[2])
-		$r = $color.R
-		$g = $color.G
-		$b = $color.B
+		$hexColor = [System.Drawing.Color]::FromArgb("0x" + $matches[2])
+		$r = $hexColor.R
+		$g = $hexColor.G
+		$b = $hexColor.B
 		
 		return "$escape[$colorLayer;2;$r;$g;$($b)m"
 	}, [System.Text.RegularExpressions.RegexOptions]::IgnoreCase)
