@@ -14,7 +14,7 @@ param(
 $result = $Text
 $escape = [Char]0x1B
 
-$colorPattern = "\@\[([B,F])#([0-9,A-f]{3,6})\]"
+$colorPattern = "\@\[([BF])#([0-9A-f]{3,6})\]"
 $htPatterns = @{
 	"\@\[R\]"	= "$escape[0m"	# Reset
 	"\@\[U\]"	= "$escape[4m"	# Underline
