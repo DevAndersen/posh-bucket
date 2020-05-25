@@ -1,49 +1,94 @@
+#requires -Version 7
+
+function Save-PromptOptions()
+{
+	[System.Environment]::SetEnvironmentVariable("PWSH_PROMPT_OPTIONS", ($PromptOptions | ConvertTo-Json -Compress), [System.EnvironmentVariableTarget]::User)
+}
+
 function Prompt()
 {
-	$envVarName = "PWSH_PROMPT_CONFIG"
-	if (![System.Environment]::GetEnvironmentVariable($envVarName, [System.EnvironmentVariableTarget]::User))
+	$global:PromptOptions ??= [System.Environment]::GetEnvironmentVariable("PWSH_PROMPT_OPTIONS", [System.EnvironmentVariableTarget]::User) | ConvertFrom-Json
+	
+	if ($PromptOptions -eq $null)
 	{
-		$defaultPromptConfig = [pscustomobject]@{
-			ClockEnabled = $true
-			ClockFormat = "HH:mm:ss"
-			GitIndicator = "$([char]0xb6)"
+		Write-Host "User environment variable 'PWSH_PROMPT_OPTIONS' not found - initializing with default values..." -ForegroundColor Yellow
+		$global:PromptOptions = [pscustomobject]@{
+			General = [pscustomobject]@{
+				RelativeHomePath = $true		# Replaces $HOME with '~'.
+				PathStyle = "#f7"				# Styling for path.
+				PathSeparatorStyle = "#f8"		# Styling for path separator.
+				DriveStyle = '$1$2'				# Styling for the current drive. Use single quotes. $1 = drive root, $2 = drive separator.
+				HomeStyle = "#fb"				# Styling for the current drive. Use single quotes. $1 = drive root, $2 = drive separator.
+				EndingTest = "#ff>#r"			# The ending of the prompt.
+			}
+			Clock = [pscustomobject]@{
+				Enabled = $true
+				Format = "#\f\aHH#\f\2:#\f\amm#\f\2:#\f\ass"	# Remember to escape with '\'.
+				BorderLeft = "#f2["
+				BorderRight = "#f2]#r "	
+			}
+			Identity = [pscustomobject]@{
+				Enabled = $false
+				IdentityString = '"#fe$($env:USERNAME)#f6@#fe$($env:COMPUTERNAME)#r "'
+			}
+			Git = [pscustomobject]@{
+				Enabled = $true																					# Makes paths in git repos relative.
+				GitIndicator = '(IsWindowsTerminal -Process (Get-Process -Id $PID)) ? "`u{1F531}" : "#f6git#r"'	# Indicator that the current directory is within a git repo. Uses fallback text if not run in Windows Terminal.
+				RepoNameStyle = "#fb"																			# Styling for the repo name.
+			}
 		}
-		
-		Write-Host "User environment variable '$envVarName' not found - initializing with default values..." -ForegroundColor Yellow
-		[System.Environment]::SetEnvironmentVariable($envVarName, ($defaultPromptConfig | ConvertTo-Json -Compress), [System.EnvironmentVariableTarget]::User)
-	}
-	
-	$promptConfig = [System.Environment]::GetEnvironmentVariable($envVarName, [System.EnvironmentVariableTarget]::User) | ConvertFrom-Json
-	
-	#region Functions
-	function InGitRepo()
-	{
-		return (git rev-parse --is-inside-work-tree 2> $null) -eq $true
+		Save-PromptOptions
 	}
 
+	#region Functions
+	
+	# Useful to check for emojis support.
+	function IsWindowsTerminal($Process)
+	{
+		if (!$IsWindows)
+		{
+			return false
+		}
+		
+		if ($Process -ne $null)
+		{
+			if ($Process.Parent.Name -eq "WindowsTerminal")
+			{
+				return $true
+			}
+			return IsWindowsTerminal -Proce $Process.Parent
+		}
+		return $false
+	}
+	
+	function InGitRepo()
+	{
+		$inGitRepo = (git rev-parse --is-inside-work-tree 2> $null)
+		if ($inGitRepo)
+		{
+			return $PWD.Path.StartsWith((GetGitRoot)) # Ensures going from a git repo to, for example, "HKLM:\", doesn't return true.
+		}
+		return $false
+	}
+	
 	function GetGitRoot()
 	{
 		return (git rev-parse --show-toplevel).Replace("/", [System.IO.Path]::DirectorySeparatorChar)
 	}
-
+	
 	function GetGitRelativePath()
 	{
 		return [regex]::Match($pwd.Path, "^($([regex]::Escape((GetGitRoot))))($([regex]::Escape([System.IO.Path]::DirectorySeparatorChar))?)(.*)").Groups[3].Value
 	}
-
+	
 	function GetGitRepoName()
 	{
 		return (GetGitRoot).Split([System.IO.Path]::DirectorySeparatorChar)[-1]
 	}
-
+	
 	function InHome()
 	{
 		return $pwd.Path.StartsWith($HOME)
-	}
-
-	function GetHomeRelativePath()
-	{
-		return $pwd.Path.Substring($HOME.Length)
 	}
 	
 	function WriteWithColor($ColorString)
@@ -77,48 +122,61 @@ function Prompt()
 				[System.Console]::Write($textGroup.Value)
 			}
 		}
+		[console]::ResetColor()
 	}
 	
-	function AddColorsToPath($Path)
+	function GetHomeRelativePath()
 	{
-		$Path = $Path.Replace([string][System.IO.Path]::DirectorySeparatorChar, "#f8$([System.IO.Path]::DirectorySeparatorChar)#f7")
-		return $Path
+		return $pwd.Path.Substring($HOME.Length)
+	}
+	
+	function WriteClock()
+	{
+		$clockTimestamp = [datetime]::Now.ToString($PromptOptions.Clock.Format)
+		return [System.Text.StringBuilder]::new().Append($PromptOptions.Clock.BorderLeft).Append($clockTimestamp).Append($PromptOptions.Clock.BorderRight).ToString()
+	}
+	
+	function WriteGit()
+	{
+		return "$(iex $PromptOptions.Git.GitIndicator) $($PromptOptions.Git.RepoNameStyle)$(GetGitRepoName) "
+	}
+	
+	function WritePath()
+	{
+		$path = ""
+		if ($PromptOptions.Git.Enabled -and (InGitRepo))
+		{
+			$path = GetGitRelativePath
+		}
+		elseif ($PromptOptions.General.RelativeHomePath -and (InHome))
+		{
+			$path = "$($PromptOptions.General.HomeStyle)~$(GetHomeRelativePath)"
+		}
+		else
+		{
+			$path = $PWD.Path
+		}
+		$path = $path -replace "(^.+)(:)",$PromptOptions.General.DriveStyle # Applies styling for the current drive.
+		$path = $path -replace "$([regex]::Escape([System.IO.Path]::DirectorySeparatorChar))$","" # Removes unnecessary directory separator char at end of path.
+		$path = $path.Replace([string][System.IO.Path]::DirectorySeparatorChar, "$($PromptOptions.General.PathSeparatorStyle)$([System.IO.Path]::DirectorySeparatorChar)$($PromptOptions.General.PathStyle)") # Styles the current path.
+		return "$($PromptOptions.General.PathStyle)$path"
 	}
 	
 	#endregion
 	
-	$config = [System.Environment]::GetEnvironmentVariable("PWSH_PROMPT_CONFIG", [System.EnvironmentVariableTarget]::User) | ConvertFrom-Json
-	$promptText = ""
-	$promptPath = ""
+	# Temporarily changes the output encoding to support emoji.
+	$savedEncoding = [console]::OutputEncoding
+	[console]::OutputEncoding = [System.Text.Encoding]::UTF8
 	
-	if ($config.ClockEnabled)
-	{
-		$promptText += "#f2[#fa$([datetime]::Now.ToString("$($promptConfig.ClockFormat)"))#f2] "
-	}
+	$promptText = ((
+		($PromptOptions.Clock.Enabled ? (WriteClock) : ""),
+		($PromptOptions.Identity.Enabled ? (iex $PromptOptions.Identity.IdentityString) : ""),
+		(($PromptOptions.Git.Enabled -and (InGitRepo)) ? (WriteGit) : ""),
+		(WritePath),
+		$PromptOptions.General.EndingTest
+	) | ? { ![string]::IsNullOrEmpty($_) }) -join ""
 	
-	if (InGitRepo)
-	{
-		$gitRelativePath = GetGitRelativePath
-		$promptText += "#f6$($promptConfig.GitIndicator) #fb$(GetGitRepoName)"
-		
-		if ($gitRelativePath.Length -ne 0)
-		{
-			$gitRelativePath = " $gitRelativePath"
-		}
-		
-		$promptPath = $gitRelativePath
-	}
-	elseif (InHome)
-	{
-		$promptPath = "#fb~$(GetHomeRelativePath)"
-	}
-	else
-	{
-		$promptPath = $PWD.Path
-	}
-	
-	$coloredPath = AddColorsToPath -Path $promptPath
-	
-	WriteWithColor -ColorString "$promptText#f7$coloredPath#ff>#r"
+	WriteWithColor -ColorString $promptText
+	[console]::OutputEncoding = $savedEncoding # Change the output encoding back to its original value.
 	return " "
 }
