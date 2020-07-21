@@ -1,14 +1,14 @@
-#requires -Version 7
+#requires -Version 5
 
 function Save-PromptOptions()
 {
-	$promptOptionsFilePath = [System.IO.Path]::Join([System.IO.Path]::GetDirectoryName($PROFILE), "promptOptions.json")
+	$promptOptionsFilePath = [System.IO.Path]::GetDirectoryName($PROFILE),"promptOptions.json" -join [System.IO.Path]::DirectorySeparatorChar
 	$PromptOptions | ConvertTo-Json | Out-File $promptOptionsFilePath -Encoding utf8
 }
 
 function Load-PromptOptions()
 {
-	$promptOptionsFilePath = [System.IO.Path]::Join([System.IO.Path]::GetDirectoryName($PROFILE), "promptOptions.json")
+	$promptOptionsFilePath = [System.IO.Path]::GetDirectoryName($PROFILE),"promptOptions.json" -join [System.IO.Path]::DirectorySeparatorChar
 	$promptOptionsContent = gc $promptOptionsFilePath -Encoding utf8
 	
 	if ($promptOptionsContent)
@@ -59,7 +59,7 @@ function Reset-PromptOptions([switch]$SkipSaving)
 		}
 		Suffix = [pscustomobject]@{													# =Prompt Suffix= | The last part of the prompt; '>' in the standard prompt function.
 			NormalUser = "&ff>"														# Prompt suffix for normal users.
-			PrivilegedUser = "&fc>"													# Prompt suffix for privileged users (administrator role on Windows, root on *NIX systems).
+			PrivilegedUser = "&fc>"													# Prompt suffix for privileged users (administrator role).
 		}
 	}
 	
@@ -85,14 +85,9 @@ function Prompt()
 	
 	#region Functions
 	
-	# Useful to check for emojis support on Windows.
+	# Useful to check for emojis support.
 	function IsWindowsTerminal($Process)
 	{
-		if (!$IsWindows)
-		{
-			return false
-		}
-		
 		if ($Process -ne $null)
 		{
 			if ($Process.Parent.Name -eq "WindowsTerminal")
@@ -128,7 +123,7 @@ function Prompt()
 	{
 		$ErrorActionPreference = "Ignore"
 		$gitRelativePath = [regex]::Match($pwd.Path, "^($([regex]::Escape((GetGitRoot))))($([regex]::Escape([System.IO.Path]::DirectorySeparatorChar))?)(.*)").Groups[3].Value
-		return ($gitRelativePath.Length -eq 0 ? "" : " ") + $gitRelativePath
+		return "$(if ($gitRelativePath.Length -eq 0) {''} else {' '})$gitRelativePath"
 	}
 	
 	function GetGitRepoName()
@@ -144,23 +139,19 @@ function Prompt()
 	
 	function IsPrivileged()
 	{
-		if ($IsWindows)
-		{
-			$adminRole = [Security.Principal.WindowsBuiltInRole]::Administrator
-			$principal = [Security.Principal.WindowsPrincipal]::new([Security.Principal.WindowsIdentity]::GetCurrent())
-			return $principal.IsInRole($adminRole)
-		}
-		return (id -u) -eq 0
+		$adminRole = [Security.Principal.WindowsBuiltInRole]::Administrator
+		$principal = [Security.Principal.WindowsPrincipal]::new([Security.Principal.WindowsIdentity]::GetCurrent())
+		return $principal.IsInRole($adminRole)
 	}
 	
 	function GetHostName()
 	{
-		return $IsWindows ? $env:COMPUTERNAME : (hostname)
+		return $env:COMPUTERNAME
 	}
 	
 	function GetUsername()
 	{
-		return $IsWindows ? $env:USERNAME : $env:USER
+		return $env:USERNAME
 	}
 	
 	function EmbedColors($EncodedString)
@@ -172,11 +163,11 @@ function Prompt()
 			$changeGroup = $match.Groups[2]
 			$depthGroup  = $match.Groups[3]
 			$colorGroup  = $match.Groups[4]
-			$textGroup   = $match.Groups[-1]
+			$textGroup   = $match.Groups[$match.Groups.Count - 1]
 			
 			if ($resetGroup.Success)
 			{
-				"`e[0m"
+				"$([char]0x1B)[0m"
 			}
 			elseif ($changeGroup.Success)
 			{
@@ -203,14 +194,14 @@ function Prompt()
                     15 { 15 }
 				}
 				
-				$colorIndex = $colorIndex -gt 7 ? $colorIndex + 52 : $colorIndex
+				$colorIndex = if ($colorIndex -gt 7) {$colorIndex + 52} else {$colorIndex}
 				
 				switch ($depthGroup.Value)
 				{
 					"f" { $colorIndex += 30 }
 					"b" { $colorIndex += 40 }
 				}
-				"`e[$($colorIndex)m"
+				"$([char]0x1B)[$($colorIndex)m"
 			}
 			elseif ($textGroup.Success)
 			{
@@ -246,17 +237,38 @@ function Prompt()
 	
 	function WritePrefix()
 	{
-		return $PromptOptions.Prefix.Enabled ? $PromptOptions.Prefix.Text : ""
+		if ($PromptOptions.Prefix.Enabled)
+		{
+			return $PromptOptions.Prefix.Text
+		}
+		else
+		{
+			return ""
+		}
 	}
 	
 	function WriteClock()
 	{
-		return $PromptOptions.Clock.Enabled ? [datetime]::Now.ToString($PromptOptions.Clock.Format) : ""
+		if ($PromptOptions.Clock.Enabled)
+		{
+			return [datetime]::Now.ToString($PromptOptions.Clock.Format)
+		}
+		else
+		{
+			return ""
+		}
 	}
 	
 	function WriteIdentity()
 	{
-		return $PromptOptions.Identity.Enabled ? (iex $PromptOptions.Identity.Text) : ""
+		if ($PromptOptions.Identity.Enabled)
+		{
+			return (iex $PromptOptions.Identity.Text)
+		}
+		else
+		{
+			return ""
+		}
 	}
 	
 	function WriteGit()
@@ -298,7 +310,14 @@ function Prompt()
 	
 	function WriteSuffix()
 	{
-		return (IsPrivileged) ? $PromptOptions.Suffix.PrivilegedUser : $PromptOptions.Suffix.NormalUser
+		if((IsPrivileged))
+		{
+			return $PromptOptions.Suffix.PrivilegedUser
+		}
+		else
+		{
+			return $PromptOptions.Suffix.NormalUser
+		}
 	}
 	
 	#endregion
