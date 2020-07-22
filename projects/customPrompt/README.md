@@ -4,7 +4,9 @@
 
 A dynamic, customizable prompt function (the text displayed before what you type, usually your current working directory) for PowerShell.
 
-![Dynamic and customizable.](./.github/example.png)
+![Dynamic.](./.github/example1.png)
+
+![Highly customizable.](./.github/example2.png)
 
 The script comes in two version:
 
