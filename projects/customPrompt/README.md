@@ -2,11 +2,9 @@
 
 ## Description
 
-A dynamic, customizable prompt function (the text displayed before what you type, usually your current working directory) for PowerShell.
+A dynamic and highly customizable prompt function (the text displayed before what you type, usually your current working directory) for PowerShell.
 
 ![Dynamic.](./.github/example1.png)
-
-![Highly customizable.](./.github/example2.png)
 
 The script comes in two version:
 
@@ -116,3 +114,9 @@ This is done with the following (case insensitive) text patterns.
 ## Presets
 
 In the `presets` directory, you'll find a few presets that sets up alternative prompt options. Simply run the scripts to apply them.
+
+## Additional images
+
+Highly customizable:
+
+![Highly customizable.](./.github/example2.png)
