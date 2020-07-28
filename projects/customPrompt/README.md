@@ -13,21 +13,22 @@ The script comes in two version:
 
 ## Requirements
 
-For the PowerShell 7 version:
-- PowerShell version 5 or greater.
+For the PowerShell 7 version (`prompt.ps1`):
+- PowerShell version 7 or greater.
 
-For the PowerShell 5 version:
+For the PowerShell 5 version (`prompt_powershell5.ps1`):
 - PowerShell version 5 or greater.
+- Microsoft Windows
 
 ## Installation
 
-Simply copy the script text into your `$PROFILE` file. The next time you start PowerShell, the custom prompt will be used.
+Simply copy the script text into your `$PROFILE` file. The next time you start PowerShell, the custom prompt will be used. Make sure to use the correct version of the script.
 
 ## Features
 
 The prompt function concatinates a number of customizable segments (in a customizable order), all of which can be customized by editing the fields of the `$PromptOptions` variable.
 
-For example, `$PromptOptions.General.PathStyle = "&fc"` will change the foreground color of directories in the current path to red. For more info about coloring, see the [applying colors section](#Applying-colors).
+For example, `$PromptOptions.General.PathStyle = "&fc"` will change the foreground color of directories in the current path to red. For more info about coloring, see the [**applying colors**](#Applying-colors) section.
 
 When `$PromptOptions` is changed, the prompt will change according right away.
 
@@ -37,13 +38,27 @@ For in-depth documentation of the values, check the script source code.
 
 Please note that PowerShell 5 and 7 do not share the same `$PROFILE` file. Therefor, if using both versions of the prompt script, changing one version's prompt options does not affect that of the other.
 
+### General
+
+> `$PromptOptions.General`
+
+Contains general configurations, such as:
+- Directory colors
+- Path separator colors ('/' or '\', depending on your OS)
+- Drive colors (for Windows)
+- The order of which the order of the prompt segments. One could, for example, make the path appear before the clock, rather than the other way around.
+
 ### Prefix
 
-A simple, static prefix text (defaults to "PS "), similarly to what is seen in the standard PowerShell prompt function.
+> `$PromptOptions.Prefix`
+
+A simple, static prefix text (defaults to "`PS `" similarly to what is seen in the standard PowerShell prompt function).
 
 Disabled by default.
 
 ### Clock
+
+> `$PromptOptions.Clock`
 
 A clock that shows when the prompt function was executed. Useful for keeping track of when your previous command or script completed.
 
@@ -51,15 +66,21 @@ Defaults to a 24-hour format (HH:mm:ss).
 
 ### Identity
 
+> `$PromptOptions.Identity`
+
 Shows the current machine- and user name.
 
 Disabled by defailt.
 
 ### Git
 
+> `$PromptOptions.Git`
+
 If the current directory is within a Git repository, shows an indicator of this and shortens the prompt to only show the repository-relative path. The name of the repository root directory will be highlighted.
 
 ### Relative home
+
+> `$PromptOptions.RelativeHome`
 
 If the current working directory is, or is within, the current user's home directory ($HOME), the $HOME part is replaced.
 
