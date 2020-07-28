@@ -4,7 +4,7 @@
 
 A dynamic and highly customizable prompt function (the text displayed before what you type, usually your current working directory) for PowerShell.
 
-![Dynamic.](./.github/example1.png)
+![Dynamic and customizable.](./.github/example1.png)
 
 The script comes in two version:
 
@@ -23,23 +23,15 @@ For the PowerShell 5 version:
 
 Simply copy the script text into your `$PROFILE` file. The next time you start PowerShell, the custom prompt will be used.
 
-Alternatively, the script can be added to your `$PROFILE` file as follows:
-
-For the PowerShell 7 version:
-
-`(iwr https://raw.githubusercontent.com/DevAndersen/posh-bucket/master/projects/customPrompt/prompt.ps1).Content >> $PROFILE`
-
-For the PowerShell 5 version:
-
-`(iwr https://raw.githubusercontent.com/DevAndersen/posh-bucket/master/projects/customPrompt/prompt_powershell5.ps1).Content >> $PROFILE`
-
 ## Features
 
-The prompt function concatinates a number of customizable segments (in a customizable order), all of which can be customized by editing the `$PromptOptions` variable.
+The prompt function concatinates a number of customizable segments (in a customizable order), all of which can be customized by editing the fields of the `$PromptOptions` variable.
 
-When the `$PromptOptions` variable is changed, the prompt will change according right away.
+For example, `$PromptOptions.General.PathStyle = "&fc"` will change the foreground color of directories in the current path to red. For more info about coloring, see the [applying colors section](#Applying-colors).
 
-For changes to the `$PromptOptions` variable to persist, use the `Save-PromptOptions` function. This will save to the 'promptOptions.json' file, located in the same directory as the `$PROFILE` file.
+When `$PromptOptions` is changed, the prompt will change according right away.
+
+In order for changes to the `$PromptOptions` variable to persist, use the `Save-PromptOptions` function. This will save the `$PromptOptions` variable to the 'promptOptions.json' file, located in the same directory as the `$PROFILE` file. This means you can play around with different designs, and only save your changes once you're satisfied with the result.
 
 For in-depth documentation of the values, check the script source code.
 
@@ -114,9 +106,3 @@ This is done with the following (case insensitive) text patterns.
 ## Presets
 
 In the `presets` directory, you'll find a few presets that sets up alternative prompt options. Simply run the scripts to apply them.
-
-## Additional images
-
-Highly customizable:
-
-![Highly customizable.](./.github/example2.png)
