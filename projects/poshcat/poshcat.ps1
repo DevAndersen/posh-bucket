@@ -1,6 +1,7 @@
 param(
 	[Object[]]$Object,
 	[String]$EscapeEndings = "bcdhm",
+	[Int]$ColorSpeed = 10,
 	[Switch]$NoRegex
 )
 
@@ -41,9 +42,9 @@ for ($i = 0; $i -lt $lines.Length; $i++)
 	{
 		$char = $shifts[$j]
 		$index = $i + $j
-		$r = [int]((Rainbowify -Index $index -Offset 1 -Speed 10) * 255)
-		$g = [int]((Rainbowify -Index $index -Offset 2 -Speed 10) * 255)
-		$b = [int]((Rainbowify -Index $index -Offset 3 -Speed 10) * 255)
+		$r = [int]((Rainbowify -Index $index -Offset 1 -Speed $ColorSpeed) * 255)
+		$g = [int]((Rainbowify -Index $index -Offset 2 -Speed $ColorSpeed) * 255)
+		$b = [int]((Rainbowify -Index $index -Offset 3 -Speed $ColorSpeed) * 255)
 		$outLine += "$e[38;2;$r;$g;$($b)m$char$e[0m"
 	}
 	$outLine
