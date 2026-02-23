@@ -1,5 +1,6 @@
 $list = [System.Collections.ArrayList]::new()
 
+Write-Host "Press any key to hog 1 GB of RAM"
 Write-Host "To free hogged RAM, close the PowerShell window/process"
 
 while ($true)
